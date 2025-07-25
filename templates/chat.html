@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="sidebar">
+        <h3>Your Chats</h3>
+        <form method="post" action="{{ url_for('chat') }}">
+            <button type="submit" name="new_chat" class="btn new-chat">+ New Chat</button>
+        </form>
+        <ul class="chat-list">
+            {% for chat in chats %}
+                <li class="{% if chat.chat_id == current_chat_id %}active{% endif %}">
+                    <a href="{{ url_for('chat', chat_id=chat.chat_id) }}">
+                        Chat {{ loop.index }} - {{ chat.created_at }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="chat-window">
+        <div class="messages" id="messages">
+            {% for message in messages %}
+                <div class="message {{ message.role }}">
+                    <div class="message-content">
+                        {{ message.content }}
+                    </div>
+                    <div class="message-time">
+                        {{ message.timestamp|datetimeformat }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <form class="message-form" id="message-form">
+            <input type="hidden" name="chat_id" value="{{ current_chat_id }}">
+            <input type="text" name="message" id="message-input" placeholder="Type your message here..." required>
+            <button type="submit" class="btn send-btn">Send</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('message-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        const chatId = form.chat_id.value;
+        const messagesDiv = document.getElementById('messages');
+        
+        if (!message) return;
+        
+        // Add user message to chat
+        const userMessageDiv = document.createElement('div');
+        userMessageDiv.className = 'message user';
+        userMessageDiv.innerHTML = `
+            <div class="message-content">${message}</div>
+            <div class="message-time">Just now</div>
+        `;
+        messagesDiv.appendChild(userMessageDiv);
+        
+        // Clear input
+        messageInput.value = '';
+        
+        // Scroll to bottom
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+        // Show loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message assistant loading';
+        loadingDiv.innerHTML = '<div class="message-content">Thinking...</div>';
+        messagesDiv.appendChild(loadingDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+        try {
+            // Send message to server
+            const response = await fetch("{{ url_for('chat') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    chat_id: chatId,
+                    message: message
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Remove loading indicator
+            messagesDiv.removeChild(loadingDiv);
+            
+            // Add AI response
+            const aiMessageDiv = document.createElement('div');
+            aiMessageDiv.className = 'message assistant';
+            aiMessageDiv.innerHTML = `
+                <div class="message-content">${data.response}</div>
+                <div class="message-time">Just now</div>
+            `;
+            messagesDiv.appendChild(aiMessageDiv);
+            
+            // Scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } catch (error) {
+            console.error('Error:', error);
+            messagesDiv.removeChild(loadingDiv);
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message assistant error';
+            errorDiv.innerHTML = '<div class="message-content">Sorry, an error occurred. Please try again.</div>';
+            messagesDiv.appendChild(errorDiv);
+        }
+    });
+</script>
+{% endblock %}
