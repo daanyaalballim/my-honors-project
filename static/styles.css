@@ -300,3 +300,49 @@ footer {
     font-size: 0.875rem;
     color: #666;
 }
+
+.profile-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.radio-option, .style-option {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.radio-option:hover, .style-option:hover {
+    background-color: #f9f9f9;
+}
+
+.option-desc {
+    margin: 0.5rem 0 0 1.5rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.persona-options {
+    margin-top: 1rem;
+}
+
+.persona-type {
+    margin-bottom: 1rem;
+}
+
+.style-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}

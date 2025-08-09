@@ -12,6 +12,7 @@
         <nav>
             {% if 'user_id' in session %}
                 <a href="{{ url_for('chat') }}">Chat</a>
+                <a href="{{ url_for('profile') }}">Profile</a>
                 <a href="{{ url_for('history') }}">History</a>
                 <a href="{{ url_for('logout') }}">Logout</a>
             {% else %}

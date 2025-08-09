@@ -46,6 +46,17 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES Users (user_id)
         )
     ''')
+
+    try:
+        conn.execute('ALTER TABLE Users ADD COLUMN language TEXT DEFAULT "english"')
+        conn.execute('ALTER TABLE Users ADD COLUMN tone TEXT DEFAULT "warm"')
+        conn.execute('ALTER TABLE Users ADD COLUMN persona_type TEXT DEFAULT "predefined"')
+        conn.execute('ALTER TABLE Users ADD COLUMN persona_key TEXT DEFAULT "peer_mentor"')
+        conn.execute('ALTER TABLE Users ADD COLUMN custom_persona TEXT DEFAULT ""')
+        conn.execute('ALTER TABLE Users ADD COLUMN explanation_style TEXT DEFAULT "detailed"')
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass 
     
     conn.commit()
     conn.close()
@@ -135,5 +146,4 @@ def add_message_to_chat(chat_id: int, user_id: int, role: str, content: str):
     conn.commit()
     conn.close()
 
-# Initialize database on import
 init_db()

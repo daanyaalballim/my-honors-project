@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <h2>Customize Your Chatbot</h2>
+    <form method="post" action="{{ url_for('update_profile') }}">
+        <!-- Language Selection -->
+        <div class="form-group">
+            <label>Preferred Language</label>
+            <select name="language" class="form-control">
+                {% for code, name in LANGUAGES.items() %}
+                    <option value="{{ code }}" {% if user.language == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Tone Selection -->
+        <div class="form-group">
+            <label>Communication Tone</label>
+            {% for tone, desc in TONE_PRESETS.items() %}
+                <div class="radio-option">
+                    <input type="radio" name="tone" value="{{ tone }}" 
+                           {% if user.tone == tone %}checked{% endif %}>
+                    <label>{{ tone|title }}</label>
+                    <p class="option-desc">{{ desc }}</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Persona Selection -->
+        <div class="form-group">
+            <label>Chatbot Persona</label>
+            <div class="persona-options">
+                <div class="persona-type">
+                    <input type="radio" name="persona_type" value="predefined" 
+                           {% if user.persona_type != 'custom' %}checked{% endif %}>
+                    <label>Predefined Persona</label>
+                    <select name="persona_key" class="form-control">
+                        {% for key, desc in PREDEFINED_PERSONAS.items() %}
+                            <option value="{{ key }}" {% if user.persona_key == key %}selected{% endif %}>
+                                {{ key|replace('_', ' ')|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="persona-type">
+                    <input type="radio" name="persona_type" value="custom"
+                           {% if user.persona_type == 'custom' %}checked{% endif %}>
+                    <label>Custom Persona</label>
+                    <textarea name="custom_persona" class="form-control"
+                              placeholder="Describe how you want the chatbot to speak...">
+                        {{ user.custom_persona or '' }}
+                    </textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Explanation Style -->
+        <div class="form-group">
+            <label>Explanation Style</label>
+            <div class="style-options">
+                {% for style, desc in LEARNING_STYLES.items() %}
+                    <div class="style-option">
+                        <input type="radio" name="explanation_style" value="{{ style }}"
+                               {% if user.explanation_style == style %}checked{% endif %}>
+                        <label>{{ style|title }}</label>
+                        <p class="option-desc">{{ desc }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <button type="submit" class="btn">Save Preferences</button>
+    </form>
+</div>
+{% endblock %}

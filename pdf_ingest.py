@@ -17,11 +17,16 @@ class PDFProcessor:
         self.embeddings = []
     
     def extract_text_from_pdf(self, pdf_path: str) -> str:
-        """Extract text from a PDF file."""
-        doc = fitz.open(pdf_path)
+        """Extract text with encoding handling"""
         text = ""
-        for page in doc:
-            text += page.get_text()
+        try:
+            doc = fitz.open(pdf_path)
+            for page in doc:
+                page_text = page.get_text()
+                if page_text:
+                    text += page_text.encode('utf-8', errors='ignore').decode('utf-8')
+        except Exception as e:
+            print(f"Error reading {pdf_path}: {e}")
         return text
     
     def chunk_text(self, text: str, chunk_size: int = 500) -> List[str]:
@@ -64,7 +69,7 @@ class PDFProcessor:
             self.metadata.append({
                 'text': chunk,
                 'source': filename,
-                'page': i // 5,  # Approximate page number
+                'page': i // 5,
                 'chunk_index': i
             })
             self.embeddings.append(embedding)
@@ -73,20 +78,12 @@ class PDFProcessor:
         """Save embeddings to FAISS index and metadata to pickle."""
         if not self.embeddings:
             raise ValueError("No embeddings to save")
-        
-        # Convert to numpy array
         embeddings_array = np.array(self.embeddings).astype('float32')
-        
-        # Create and save FAISS index
         dimension = embeddings_array.shape[1]
         index = faiss.IndexFlatL2(dimension)
         index.add(embeddings_array)
-        
-        # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         faiss.write_index(index, output_path)
-        
-        # Save metadata
         metadata_path = os.path.join(os.path.dirname(output_path), 'metadata.pkl')
         with open(metadata_path, 'wb') as f:
             pickle.dump(self.metadata, f)
@@ -94,16 +91,11 @@ class PDFProcessor:
 def ingest_pdfs(pdf_dir: str):
     """Process all PDFs in a directory and create FAISS index."""
     processor = PDFProcessor()
-    
-    # Get all PDF files in directory
     pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
-    
-    # Process each PDF
+
     for pdf_file in tqdm(pdf_files, desc="Processing PDFs"):
         pdf_path = os.path.join(pdf_dir, pdf_file)
         processor.process_pdf(pdf_path)
-    
-    # Save results
     processor.save_to_faiss(Config.FAISS_INDEX_PATH)
     
     print(f"Processed {len(processor.chunks)} chunks from {len(pdf_files)} PDFs")

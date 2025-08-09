@@ -53,8 +53,6 @@
         const messagesDiv = document.getElementById('messages');
         
         if (!message) return;
-        
-        // Add user message to chat
         const userMessageDiv = document.createElement('div');
         userMessageDiv.className = 'message user';
         userMessageDiv.innerHTML = `
@@ -62,14 +60,8 @@
             <div class="message-time">Just now</div>
         `;
         messagesDiv.appendChild(userMessageDiv);
-        
-        // Clear input
         messageInput.value = '';
-        
-        // Scroll to bottom
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        
-        // Show loading indicator
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message assistant loading';
         loadingDiv.innerHTML = '<div class="message-content">Thinking...</div>';
@@ -77,7 +69,6 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         
         try {
-            // Send message to server
             const response = await fetch("{{ url_for('chat') }}", {
                 method: 'POST',
                 headers: {
@@ -90,11 +81,7 @@
             });
             
             const data = await response.json();
-            
-            // Remove loading indicator
             messagesDiv.removeChild(loadingDiv);
-            
-            // Add AI response
             const aiMessageDiv = document.createElement('div');
             aiMessageDiv.className = 'message assistant';
             aiMessageDiv.innerHTML = `
@@ -102,8 +89,6 @@
                 <div class="message-time">Just now</div>
             `;
             messagesDiv.appendChild(aiMessageDiv);
-            
-            // Scroll to bottom
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         } catch (error) {
             console.error('Error:', error);

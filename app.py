@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from auth import register_user, verify_user
+from auth import register_user, verify_user, update_user_profile
 from database import get_user_chats, get_chat_messages, create_new_chat, add_message_to_chat
 from chat_handler import process_query
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+from constants import LANGUAGES, LEARNING_STYLES, TONE_PRESETS, PREDEFINED_PERSONAS
 
 load_dotenv()
 
@@ -16,7 +17,6 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'default-secret-key')
 def datetimeformat(value, format='%Y-%m-%d %H:%M'):
     """Custom datetime formatter filter"""
     if isinstance(value, str):
-        # If it's a string from SQLite, parse it first
         try:
             value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         except ValueError:
@@ -57,6 +57,43 @@ def register():
             flash('Username already exists', 'danger')
     return render_template('register.html')
 
+
+@app.route('/profile', methods=['GET'])
+def profile():
+    from database import get_db_connection
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM Users WHERE user_id = ?', (user_id,)).fetchone()
+    conn.close()
+    
+    return render_template('profile.html', user=dict(user), LANGUAGES=LANGUAGES,
+                         TONE_PRESETS=TONE_PRESETS,
+                         PREDEFINED_PERSONAS=PREDEFINED_PERSONAS,
+                         LEARNING_STYLES=LEARNING_STYLES)
+
+@app.route('/profile/update', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    updates = {
+        'language': request.form.get('language'),
+        'tone': request.form.get('tone'),
+        'persona_type': request.form.get('persona_type'),
+        'persona_key': request.form.get('persona_key'),
+        'custom_persona': request.form.get('custom_persona'),
+        'explanation_style': request.form.get('explanation_style')
+    }
+    
+    update_user_profile(user_id, updates)
+    flash('Profile updated successfully!', 'success')
+    return redirect(url_for('profile'))
+
+
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     if 'user_id' not in session:
@@ -65,28 +102,19 @@ def chat():
     user_id = session['user_id']
     
     if request.method == 'POST':
-        # Handle new chat creation
         if 'new_chat' in request.form:
             chat_id = create_new_chat(user_id)
             return redirect(url_for('chat', chat_id=chat_id))
-        
-        # Handle message submission
         chat_id = request.form.get('chat_id')
         message = request.form.get('message')
         
         if message and chat_id:
-            # Add user message to database
             add_message_to_chat(chat_id, user_id, 'user', message)
-            
-            # Process query and get AI response
             ai_response = process_query(user_id, message, chat_id)
-            
-            # Add AI response to database
             add_message_to_chat(chat_id, user_id, 'assistant', ai_response)
             
             return jsonify({'response': ai_response})
     
-    # Get or create chat
     chat_id = request.args.get('chat_id')
     if not chat_id:
         chats = get_user_chats(user_id)
