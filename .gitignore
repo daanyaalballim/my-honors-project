@@ -1,0 +1,11 @@
+.env
+*.env
+.DS_Store
+__pycache__/
+.venv/
+database.db
+*.sqlite*
+vector_store/
+data/*.pdf
+node_modules/
+instance/
